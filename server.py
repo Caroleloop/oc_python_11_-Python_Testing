@@ -28,7 +28,38 @@ def index():
 
 @app.route("/showSummary", methods=["POST"])
 def showSummary():
-    club = [club for club in clubs if club["email"] == request.form["email"]][0]
+    """
+    Affiche le résumé d'un club après saisie de l'email du secrétaire.
+
+    Cette route traite le formulaire envoyé depuis la page d'accueil (index.html)
+    contenant l'email du club.
+
+    Comportement :
+        1. Récupère l'email depuis le formulaire POST.
+        2. Cherche le club correspondant dans la liste `clubs`.
+        3. Si aucun club n'est trouvé :
+            - Envoie un message flash : "Sorry, that email wasn't found."
+            - Redirige vers la page d'accueil (index.html).
+        4. Si un club est trouvé :
+            - Récupère le premier club correspondant.
+            - Affiche la page `welcome.html` avec les informations du club
+              et la liste des compétitions disponibles.
+
+    Flash messages :
+        - "Sorry, that email wasn't found." : affiché si l'email n'existe pas.
+
+    Returns:
+        - redirect vers "index" si email non trouvé.
+        - render_template("welcome.html") si email valide.
+    """
+    email = request.form["email"]
+    matching_clubs = [club for club in clubs if club["email"] == email]
+
+    if not matching_clubs:
+        flash("Sorry, that email wasn't found.")
+        return redirect(url_for("index"))
+
+    club = matching_clubs[0]
     return render_template("welcome.html", club=club, competitions=competitions)
 
 
