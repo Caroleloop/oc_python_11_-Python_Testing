@@ -6,53 +6,67 @@ import html
 @pytest.fixture
 def client():
     """
-    Fixture Flask test client.
+    Fixture pour fournir un client de test Flask.
 
-    Configure l'application Flask en mode TESTING et fournit un client de test
-    pour simuler des requêtes HTTP dans les tests.
+    Cette fixture configure l'application Flask en mode TESTING, ce qui permet :
+        - De simuler des requêtes HTTP sans lancer le serveur.
+        - D'accéder aux réponses et aux données de l'application pour les assertions.
+
+    Yields:
+        client: instance de Flask test client pour les tests.
     """
-    app.config["TESTING"] = True
+    app.config["TESTING"] = True  # Active le mode test pour l'application Flask
     with app.test_client() as client:
+        # Fournit le client pour l'utilisation dans les tests
         yield client
 
 
 def test_email_not_found(client):
     """
-    Teste le comportement de l'application lorsqu'un email non existant est soumis.
+    Test du comportement lorsque l'email soumis n'existe pas.
 
-    Envoie un email qui n'est pas présent dans clubs.json via la route /showSummary.
-    Vérifie que :
-        1. La page renvoyée contient le titre de l'index.
-        2. Le message flash d'erreur "Sorry, that email wasn't found." est affiché.
+    Ce test simule l'envoi d'un email non présent dans `clubs.json` via la route /showSummary.
+    Il vérifie :
+        1. Que la page renvoyée contient le titre de l'index.
+        2. Que le message flash "Sorry, that email wasn't found." est affiché.
+
+    Args:
+        client: fixture pytest, client de test Flask.
     """
+    # Envoie d'une requête POST avec un email inconnu
     response = client.post("/showSummary", data={"email": "inconnu@example.com"}, follow_redirects=True)
 
-    # Décoder le HTML en texte brut pour gérer les entités HTML
+    # Décodage du HTML en texte brut pour gérer les entités HTML
     response_text = html.unescape(response.data.decode())
 
-    # Vérifie que le titre de l'index est présent
+    # Vérifie que le titre de l'index est présent dans la réponse
     assert "Welcome to the GUDLFT Registration Portal" in response_text
 
-    # Vérifie que le message flash est présent
+    # Vérifie que le message flash d'erreur est présent
     assert "Sorry, that email wasn't found." in response_text
 
 
 def test_email_found(client):
     """
-    Teste le comportement de l'application lorsqu'un email existant est soumis.
+    Test du comportement lorsque l'email soumis existe.
 
-    Envoie un email valide présent dans clubs.json via la route /showSummary.
-    Vérifie que :
-        1. Le résumé du club est affiché (texte "Welcome" dans welcome.html).
-        2. Aucun message d'erreur n'est présent.
+    Ce test simule l'envoi d'un email valide présent dans `clubs.json` via la route /showSummary.
+    Il vérifie :
+        1. Que le résumé du club est affiché (texte "Welcome" dans welcome.html).
+        2. Qu'aucun message d'erreur n'est présent.
+
+    Args:
+        client: fixture pytest, client de test Flask.
     """
-    valid_email = "admin@irontemple.com"  # mettre un email réel de clubs.json
+    valid_email = "admin@irontemple.com"  # Email réel présent dans clubs.json
+
+    # Envoie d'une requête POST avec un email valide
     response = client.post("/showSummary", data={"email": valid_email}, follow_redirects=True)
 
-    # Décoder le HTML en texte brut
+    # Décodage du HTML en texte brut
     response_text = html.unescape(response.data.decode())
 
-    # Vérifie que le résumé est affiché
+    # Vérifie que la page affiche le résumé du club
     assert "Welcome" in response_text
 
     # Vérifie qu'aucun message d'erreur n'est présent
