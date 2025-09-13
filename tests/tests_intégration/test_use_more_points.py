@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from server import app, clubs, competitions
 
 
@@ -43,11 +44,15 @@ def test_cannot_redeem_more_points_than_available(client):
         client: Le client de test Flask fourni par la fixture `client`.
     """
     # Arrange : préparation des données pour le test
-    clubs[0]["points"] = "5"
-    competitions[0]["numberOfPlaces"] = "10"
+    clubs[0]["points"] = 5
+    competitions[0]["numberOfPlaces"] = 10
+    for comp in competitions:
+        comp_date = datetime.strptime(comp["date"], "%Y-%m-%d %H:%M:%S")
+        if comp_date > datetime.now() and int(comp["numberOfPlaces"]) > 0:
+            competition = comp
+            break
 
     club = clubs[0]
-    competition = competitions[0]
 
     # Act : envoi d'une requête POST simulant la réservation de 10 places
     response = client.post(

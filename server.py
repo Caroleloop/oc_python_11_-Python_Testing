@@ -114,8 +114,17 @@ def purchasePlaces():
         - render_template("welcome.html") avec le club et les compétitions mises à jour.
     """
     # Récupération de la compétition et du club via les données du formulaire
-    competition = [c for c in competitions if c["name"] == request.form["competition"]][0]
-    club = [c for c in clubs if c["name"] == request.form["club"]][0]
+    competition_list = [c for c in competitions if c["name"] == request.form["competition"]]
+    if not competition_list:
+        flash("Competition not found.")
+        return redirect(url_for("index"))
+    competition = competition_list[0]
+
+    club_list = [c for c in clubs if c["name"] == request.form["club"]]
+    if not club_list:
+        flash("Club not found.")
+        return redirect(url_for("index"))
+    club = club_list[0]
     placesRequired = int(request.form["places"])
 
     # Vérification que la compétition n'est pas déjà passée

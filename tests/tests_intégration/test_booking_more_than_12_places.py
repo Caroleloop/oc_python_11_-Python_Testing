@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from server import app, competitions, clubs
 
 
@@ -38,8 +39,12 @@ def test_booking_more_than_12_places(client):
           restent supérieures ou égales à 0.
     """
     # On choisit un club et une compétition existants
-    competition = competitions[0]
-    club = clubs[0]
+    competition = next(
+        c
+        for c in competitions
+        if int(c["numberOfPlaces"]) >= 13 and datetime.strptime(c["date"], "%Y-%m-%d %H:%M:%S") > datetime.now()
+    )
+    club = next(c for c in clubs if int(c["points"]) >= 13)
 
     # On essaie de réserver 13 places
     response = client.post(
