@@ -81,20 +81,9 @@ def purchasePlaces():
     club = [c for c in clubs if c["name"] == request.form["club"]][0]
     placesRequired = int(request.form["places"])
 
-    # Vérification que la compétition n'est pas déjà passée
-    competition_date = datetime.strptime(competition["date"], "%Y-%m-%d %H:%M:%S")
-    if competition_date < datetime.now():
-        flash("You cannot book a place on a past competition.")
-        return render_template("welcome.html", club=club, competitions=competitions)
-
     # Vérification que le club dispose de suffisamment de points
     if placesRequired > int(club["points"]):
         flash("You do not have enough points to book these places.")
-        return render_template("welcome.html", club=club, competitions=competitions)
-
-    # Limitation à 12 places maximum par club et par compétition
-    if placesRequired > 12:
-        flash("Cannot book more than 12 places per competition.")
         return render_template("welcome.html", club=club, competitions=competitions)
 
     competition["numberOfPlaces"] = int(competition["numberOfPlaces"]) - placesRequired
