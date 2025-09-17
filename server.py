@@ -141,6 +141,13 @@ def purchasePlaces():
 
 
 # TODO: Add route for points display
+@app.route("/points")
+def points():
+    """
+    Affiche un tableau public en lecture seule des clubs et de leurs points.
+    Accessible sans connexion.
+    """
+    return render_template("points.html", clubs=clubs)
 
 
 @app.route("/logout")
