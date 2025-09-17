@@ -15,6 +15,28 @@ def loadCompetitions():
         return listOfCompetitions
 
 
+def updateData():
+    """Sauvegarde les clubs et compétitions dans leurs fichiers JSON avec types cohérents."""
+
+    if app.config.get("TESTING"):  # Ne rien faire si on est en test
+        return
+
+    # Normaliser les points des clubs
+    for club in clubs:
+        club["points"] = int(club["points"])
+
+    # Normaliser le nombre de places des compétitions
+    for competition in competitions:
+        competition["numberOfPlaces"] = int(competition["numberOfPlaces"])
+
+    # Écriture dans les fichiers JSON
+    with open("clubs.json", "w") as c:
+        json.dump({"clubs": clubs}, c, indent=4)
+
+    with open("competitions.json", "w") as comps:
+        json.dump({"competitions": competitions}, comps, indent=4)
+
+
 app = Flask(__name__)
 app.secret_key = "something_special"
 
@@ -97,7 +119,13 @@ def purchasePlaces():
         flash("Cannot book more than 12 places per competition.")
         return render_template("welcome.html", club=club, competitions=competitions)
 
+    # Mise à jour des données : décrémentation des places et des points du club
     competition["numberOfPlaces"] = int(competition["numberOfPlaces"]) - placesRequired
+    club["points"] = int(club["points"]) - placesRequired
+
+    # Sauvegarde centralisée
+    updateData()
+
     flash("Great-booking complete!")
     return render_template("welcome.html", club=club, competitions=competitions)
 
