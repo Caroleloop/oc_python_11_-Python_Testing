@@ -1,15 +1,3 @@
-<!-- 
-Améliorations apportées:
-1. Ajout de <!DOCTYPE html> pour une meilleure compatibilité HTML5.
-2. Correction de l'indentation pour plus de lisibilité.
-3. Correction de la balise {% endwith %} pour englober uniquement le bloc des messages flash.
-4. Ajout de <p> autour du texte "Points available" pour une meilleure sémantique HTML.
-5. Utilisation de <strong> pour mettre en valeur le nom des compétitions.
-6. Correction des balises <br> pour être conformes au HTML (au lieu de </br>).
-7. Suppression du <hr /> après chaque compétition pour alléger la mise en page.
-8. Uniformisation des espaces et des sauts de ligne pour plus de clarté.
--->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,13 +10,13 @@ Améliorations apportées:
     <a href="{{url_for('logout')}}">Logout</a>
 
     {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{message}}</li>
-            {% endfor %}
-       </ul>
-    {% endif %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li>{{message}}</li>
+                {% endfor %}
+        </ul>
+        {% endif %}
     {% endwith %}
 
     <p> Points available: {{club['points']}}</p>
