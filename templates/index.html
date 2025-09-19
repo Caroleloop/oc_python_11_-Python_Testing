@@ -1,11 +1,10 @@
-<!--
-Corrections apportées pour conformité W3C :
-1. Ajout de <!DOCTYPE html> (obligatoire).
-2. Correction de l'attribut id vide sur l'input (id="" → id="email").
-3. Alignement du label avec l'input grâce à for="email".
-4. Suppression du slash inutile dans <input> (HTML5 n'en a pas besoin).
-5. Encapsulation du texte libre dans une balise <p> pour plus de sémantique.
-6. Ajout de l'attribut required sur le champ email pour renforcer la validation.
+<!-- 
+Améliorations apportées:
+1. Ajout de la gestion des messages flash avec Jinja2 pour afficher les notifications à l'utilisateur.
+2. Ajout de l'attribut "required" sur le champ email pour éviter les soumissions vides.
+3. Correction de l'attribut "id" de l'input email pour qu'il soit correctement défini.
+4. Ajout d'un lien vers la page des points des clubs, permettant aux utilisateurs de consulter les informations sans se connecter.
+5. Ajout de la déclaration DOCTYPE pour une meilleure conformité HTML5.
 -->
 
 <!DOCTYPE html>
@@ -33,5 +32,6 @@ Corrections apportées pour conformité W3C :
         <input type="email" name="email" id="email" required>
         <button type="submit">Enter</button>
     </form>
+    <p>Or you can <a href="{{ url_for('points') }}">view the points of all clubs</a> without logging in.</p>
 </body>
 </html>

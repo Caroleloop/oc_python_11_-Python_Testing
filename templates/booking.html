@@ -1,11 +1,9 @@
 <!--
-Corrections apportées pour conformité W3C :
-1. Ajout de <!DOCTYPE html> (obligatoire).
-2. Suppression de l'attribut id vide sur l'input (id="" → id="places").
-3. Alignement du label avec l'input via for="places".
-4. Suppression du slash inutile sur <input> (valide en HTML5 sans /).
-5. Ajout d'une balise <p> pour rendre "Places available" plus sémantique.
-6. Ajout d'attributs min="1" et required pour renforcer la validation côté client.
+Améliorations apportées:
+1. Ajout de la déclaration <!DOCTYPE html> pour respecter les standards HTML5.
+2. Ajout d'un identifiant "places" à l'input pour correspondre au label.
+3. Ajout des attributs HTML5 "min" et "required" à l'input pour améliorer la validation côté client.
+4. Meilleure lisibilité du code avec des retours à la ligne et indentation cohérente.
 -->
 
 <!DOCTYPE html>
@@ -22,9 +20,6 @@ Corrections apportées pour conformité W3C :
         <input type="hidden" name="club" value="{{club['name']}}">
         <input type="hidden" name="competition" value="{{competition['name']}}">
 
-        <!-- Le champ "places" doit avoir un attribut id non vide
-        afin que le label puisse le cibler correctement avec for="places".
-        Cela corrige l'erreur W3C sur id="" et améliore l'accessibilité. -->
         <label for="places">How many places?</label>    
         <input type="number" name="places" id="places" min="1" required>
 

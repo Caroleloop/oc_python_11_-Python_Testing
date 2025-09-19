@@ -4,28 +4,50 @@ from datetime import datetime
 
 
 def loadClubs():
+    """
+    Charge la liste des clubs depuis le fichier JSON 'clubs.json'.
+
+    Returns:
+        list: Liste des clubs sous forme de dictionnaires.
+    """
     with open("clubs.json") as c:
         listOfClubs = json.load(c)["clubs"]
         return listOfClubs
 
 
 def loadCompetitions():
+    """
+    Charge la liste des compétitions depuis le fichier JSON 'competitions.json'.
+
+    Returns:
+        list: Liste des compétitions sous forme de dictionnaires.
+    """
     with open("competitions.json") as comps:
         listOfCompetitions = json.load(comps)["competitions"]
         return listOfCompetitions
 
 
 def updateData():
-    """Sauvegarde les clubs et compétitions dans leurs fichiers JSON avec types cohérents."""
+    """
+    Sauvegarde les données de clubs et compétitions dans leurs fichiers JSON.
 
-    if app.config.get("TESTING"):  # Ne rien faire si on est en test
+    Cette fonction :
+        - Convertit les points des clubs et le nombre de places des compétitions
+          en entiers pour garantir la cohérence.
+        - Écrit les données normalisées dans leurs fichiers JSON respectifs.
+
+    Note:
+        Si l'application est en mode TESTING (app.config["TESTING"] == True),
+        les fichiers JSON ne sont pas modifiés.
+    """
+    if app.config.get("TESTING"):
         return
 
-    # Normaliser les points des clubs
+    # Normalisation des points des clubs
     for club in clubs:
         club["points"] = int(club["points"])
 
-    # Normaliser le nombre de places des compétitions
+    # Normalisation du nombre de places des compétitions
     for competition in competitions:
         competition["numberOfPlaces"] = int(competition["numberOfPlaces"])
 
@@ -37,15 +59,22 @@ def updateData():
         json.dump({"competitions": competitions}, comps, indent=4)
 
 
+# Création de l'application Flask
 app = Flask(__name__)
-app.secret_key = "something_special"
+app.secret_key = "something_special"  # Clé secrète pour les sessions et flash messages
 
+# Chargement initial des données
 competitions = loadCompetitions()
 clubs = loadClubs()
 
 
 @app.route("/")
 def index():
+    """
+    Page d'accueil du site.
+
+    Affiche le formulaire de connexion par email pour le secrétaire.
+    """
     return render_template("index.html")
 
 
@@ -54,26 +83,14 @@ def showSummary():
     """
     Affiche le résumé d'un club après saisie de l'email du secrétaire.
 
-    Cette route traite le formulaire envoyé depuis la page d'accueil (index.html)
-    contenant l'email du club.
-
-    Comportement :
+    Processus :
         1. Récupère l'email depuis le formulaire POST.
         2. Cherche le club correspondant dans la liste `clubs`.
-        3. Si aucun club n'est trouvé :
-            - Envoie un message flash : "Sorry, that email wasn't found."
-            - Redirige vers la page d'accueil (index.html).
-        4. Si un club est trouvé :
-            - Récupère le premier club correspondant.
-            - Affiche la page `welcome.html` avec les informations du club
-              et la liste des compétitions disponibles.
+        3. Si aucun club n'est trouvé, redirige vers la page d'accueil avec un message flash.
+        4. Sinon, affiche la page 'welcome.html' avec les informations du club et les compétitions.
 
     Flash messages :
-        - "Sorry, that email wasn't found." : affiché si l'email n'existe pas.
-
-    Returns:
-        - redirect vers "index" si email non trouvé.
-        - render_template("welcome.html") si email valide.
+        - "Sorry, that email wasn't found." si email non reconnu.
     """
     email = request.form["email"]
     matching_clubs = [club for club in clubs if club["email"] == email]
@@ -88,6 +105,17 @@ def showSummary():
 
 @app.route("/book/<competition>/<club>")
 def book(competition, club):
+    """
+    Page de réservation pour un club et une compétition donnés.
+
+    Args:
+        competition (str): Nom de la compétition
+        club (str): Nom du club
+
+    Returns:
+        render_template: Page 'booking.html' si club et compétition trouvés,
+                         sinon retour à 'welcome.html' avec un message flash.
+    """
     foundClub = [c for c in clubs if c["name"] == club][0]
     foundCompetition = [c for c in competitions if c["name"] == competition][0]
     if foundClub and foundCompetition:
@@ -99,52 +127,56 @@ def book(competition, club):
 
 @app.route("/purchasePlaces", methods=["POST"])
 def purchasePlaces():
-    competition = [c for c in competitions if c["name"] == request.form["competition"]][0]
-    club = [c for c in clubs if c["name"] == request.form["club"]][0]
-    placesRequired = int(request.form["places"])
+    """
+    Traite l'achat de places pour une compétition par un club.
 
-    # Vérification que la compétition n'est pas déjà passée
+    Vérifie plusieurs règles :
+        - La compétition n'est pas passée.
+        - Le nombre de places demandées est > 0.
+        - Suffisamment de places disponibles.
+        - Le club a assez de points.
+        - Limite de 12 places par compétition.
+
+    Si toutes les validations passent :
+        - Décrémente les places disponibles et les points du club.
+        - Met à jour les fichiers JSON.
+        - Affiche un message de succès.
+    """
+    competition = next(c for c in competitions if c["name"] == request.form["competition"])
+    club = next(c for c in clubs if c["name"] == request.form["club"])
+    places_required = int(request.form["places"])
+
     competition_date = datetime.strptime(competition["date"], "%Y-%m-%d %H:%M:%S")
-    if competition_date < datetime.now():
-        flash("You cannot book a place on a past competition.")
-        return render_template("welcome.html", club=club, competitions=competitions)
 
-    # Vérification que le nombre de places demandé est valide (> 0)
-    if placesRequired <= 0:
-        flash("Number of places must be greater than zero.")
-        return render_template("welcome.html", club=club, competitions=competitions)
+    # Liste de validations avec message et condition
+    validations = [
+        ("You cannot book a place on a past competition.", competition_date < datetime.now()),
+        ("Number of places must be greater than zero.", places_required <= 0),
+        ("Not enough places left in this competition.", places_required > int(competition["numberOfPlaces"])),
+        ("You do not have enough points to book these places.", places_required > int(club["points"])),
+        ("Cannot book more than 12 places per competition.", places_required > 12),
+    ]
 
-    # Vérification qu'il reste assez de places dans la compétition
-    if placesRequired > int(competition["numberOfPlaces"]):
-        flash("Not enough places left in this competition.")
-        return render_template("welcome.html", club=club, competitions=competitions)
+    # Vérification de chaque condition
+    for message, condition in validations:
+        if condition:
+            flash(message)
+            return render_template("welcome.html", club=club, competitions=competitions)
 
-    # Vérification que le club dispose de suffisamment de points
-    if placesRequired > int(club["points"]):
-        flash("You do not have enough points to book these places.")
-        return render_template("welcome.html", club=club, competitions=competitions)
+    # Mise à jour des données si validation réussie
+    competition["numberOfPlaces"] = int(competition["numberOfPlaces"]) - places_required
+    club["points"] = int(club["points"]) - places_required
 
-    # Limitation à 12 places maximum par club et par compétition
-    if placesRequired > 12:
-        flash("Cannot book more than 12 places per competition.")
-        return render_template("welcome.html", club=club, competitions=competitions)
-
-    # Mise à jour des données : décrémentation des places et des points du club
-    competition["numberOfPlaces"] = int(competition["numberOfPlaces"]) - placesRequired
-    club["points"] = int(club["points"]) - placesRequired
-
-    # Sauvegarde centralisée
     updateData()
-
     flash("Great-booking complete!")
     return render_template("welcome.html", club=club, competitions=competitions)
 
 
-# TODO: Add route for points display
 @app.route("/points")
 def points():
     """
-    Affiche un tableau public en lecture seule des clubs et de leurs points.
+    Affiche un tableau public des clubs et de leurs points.
+
     Accessible sans connexion.
     """
     return render_template("points.html", clubs=clubs)
@@ -152,4 +184,7 @@ def points():
 
 @app.route("/logout")
 def logout():
+    """
+    Déconnecte le club et redirige vers la page d'accueil.
+    """
     return redirect(url_for("index"))
